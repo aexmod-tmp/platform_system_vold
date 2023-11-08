@@ -17,6 +17,7 @@
 #include "FsCrypt.h"
 
 #include "Checkpoint.h"
+#include "Keystore.h"
 #include "KeyStorage.h"
 #include "KeyUtil.h"
 #include "Utils.h"
@@ -738,7 +739,7 @@ static std::string volume_secdiscardable_path(const std::string& volume_uuid) {
 }
 
 static bool read_or_create_volkey(const std::string& misc_path, const std::string& volume_uuid,
-                                  EncryptionPolicy* policy) {
+                                  EncryptionPolicy* policy, int flags) {
     auto secdiscardable_path = volume_secdiscardable_path(volume_uuid);
     std::string secdiscardable_hash;
     if (android::vold::pathExists(secdiscardable_path)) {
@@ -830,6 +831,7 @@ bool fscrypt_set_user_key_protection(userid_t user_id, const std::string& secret
 
     auto const directory_path = get_ce_key_directory_path(user_id);
     auto const paths = get_ce_key_paths(directory_path);
+
     std::string ce_key_path;
     if (!get_ce_key_new_path(directory_path, paths, &ce_key_path)) return false;
     if (!android::vold::storeKeyAtomically(ce_key_path, user_key_temp, *auth, ce_key)) return false;
@@ -953,7 +955,7 @@ bool fscrypt_prepare_user_storage(const std::string& volume_uuid, userid_t user_
                 }
             } else {
                 auto misc_de_empty_volume_path = android::vold::BuildDataMiscDePath("", user_id);
-                if (!read_or_create_volkey(misc_de_empty_volume_path, volume_uuid, &de_policy)) {
+                if (!read_or_create_volkey(misc_de_empty_volume_path, volume_uuid, &de_policy, flags)) {
                     return false;
                 }
             }
@@ -997,7 +999,7 @@ bool fscrypt_prepare_user_storage(const std::string& volume_uuid, userid_t user_
                 }
             } else {
                 auto misc_ce_empty_volume_path = android::vold::BuildDataMiscCePath("", user_id);
-                if (!read_or_create_volkey(misc_ce_empty_volume_path, volume_uuid, &ce_policy)) {
+                if (!read_or_create_volkey(misc_ce_empty_volume_path, volume_uuid, &ce_policy, flags)) {
                     return false;
                 }
             }
